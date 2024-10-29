@@ -62,5 +62,5 @@ dist
 
 .env
 
-database.db
+prisma/database.db
 database.db-journal
