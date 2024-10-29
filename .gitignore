@@ -60,7 +60,7 @@ test/types/index.js
 # compiled app
 dist
 
-.env
-
 prisma/database.db
 database.db-journal
+
+draft.txt

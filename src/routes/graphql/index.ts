@@ -1,8 +1,9 @@
-import { FastifyPluginAsyncTypebox } from '@fastify/type-provider-typebox';
-import { createGqlResponseSchema, gqlResponseSchema } from './schemas.js';
-import { graphql } from 'graphql';
-import { schema } from './schema.graphql.js';
 import depthLimit from 'graphql-depth-limit';
+import { graphql } from 'graphql';
+import { FastifyPluginAsyncTypebox } from '@fastify/type-provider-typebox';
+
+import { createGqlResponseSchema, gqlResponseSchema } from './schemas.js';
+import { schema } from './schema-graphql/schema.graphql.js';
 
 const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
   const { prisma } = fastify;
@@ -32,12 +33,12 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
 
         if (result.errors) {
           return { errors: result.errors };
-        } else {
-          return result;
         }
+
+        return result;
       } catch {
         return {
-          errors: [{ message: 'Internal server error' }],
+          errors: [{ message: '500: Internal server error' }],
         };
       }
     },
