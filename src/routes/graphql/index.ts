@@ -1,5 +1,5 @@
 import depthLimit from 'graphql-depth-limit';
-import { graphql } from 'graphql';
+import { graphql, parse, validate } from 'graphql';
 import { FastifyPluginAsyncTypebox } from '@fastify/type-provider-typebox';
 
 import { createGqlResponseSchema, gqlResponseSchema } from './schemas.js';
@@ -17,29 +17,32 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
         200: gqlResponseSchema,
       },
     },
-    async handler(req) {
+    async handler(req, reply) {
       const { query, variables } = req.body;
 
       try {
+        const graphqlErrors = validate(schema, parse(query), [depthLimit(5)]);
+
+        if (graphqlErrors.length) {
+          return reply.code(400).send({ errors: graphqlErrors });
+        }
+
         const result = await graphql({
           schema,
           source: query,
           variableValues: variables,
           contextValue: { prisma },
-          // TODO fix and remove after
-          // @ts-ignore
-          validationRules: [depthLimit(5)],
         });
 
         if (result.errors) {
-          return { errors: result.errors };
+          return reply.code(400).send({ errors: result.errors });
         }
 
-        return result;
+        return reply.send(result);
       } catch {
-        return {
-          errors: [{ message: '500: Internal server error' }],
-        };
+        return reply.code(500).send({
+          errors: [{ message: 'Internal server error' }],
+        });
       }
     },
   });
