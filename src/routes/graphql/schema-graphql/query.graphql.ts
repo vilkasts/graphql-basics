@@ -1,5 +1,3 @@
-import { Profile as PrismaProfile, User as PrismaUser } from '.prisma/client';
-import { PrismaClient } from '@prisma/client';
 import {
   GraphQLBoolean,
   GraphQLEnumType,
@@ -9,7 +7,12 @@ import {
   GraphQLNonNull,
   GraphQLObjectType,
   GraphQLString,
-} from 'graphql/index.js';
+} from 'graphql';
+import {
+  PrismaClient,
+  Profile as PrismaProfile,
+  User as PrismaUser,
+} from '@prisma/client';
 
 import { UUIDType } from '../types/uuid.js';
 import { MemberTypeId } from '../../member-types/schemas.js';
@@ -46,14 +49,12 @@ const ProfileType = new GraphQLObjectType({
     id: { type: new GraphQLNonNull(UUIDType) },
     isMale: { type: new GraphQLNonNull(GraphQLBoolean) },
     yearOfBirth: { type: new GraphQLNonNull(GraphQLInt) },
-
     memberType: {
       type: new GraphQLNonNull(MemberType),
-      async resolve(parent: PrismaProfile, _, context: { prisma: PrismaClient }) {
-        return context.prisma.memberType.findUnique({
+      resolve: async (parent: PrismaProfile, _, context: { prisma: PrismaClient }) =>
+        context.prisma.memberType.findUnique({
           where: { id: parent.memberTypeId },
-        });
-      },
+        }),
     },
   }),
 });
@@ -64,29 +65,26 @@ const UserType = new GraphQLObjectType({
     id: { type: new GraphQLNonNull(UUIDType) },
     name: { type: new GraphQLNonNull(GraphQLString) },
     balance: { type: new GraphQLNonNull(GraphQLFloat) },
-
     profile: {
       type: ProfileType,
-      async resolve(parent: PrismaUser, _, context: { prisma: PrismaClient }) {
-        return context.prisma.profile.findUnique({
+      resolve: async (parent: PrismaUser, _, context: { prisma: PrismaClient }) =>
+        context.prisma.profile.findUnique({
           where: { userId: parent.id },
-        });
-      },
+        }),
     },
 
     posts: {
       type: new GraphQLNonNull(new GraphQLList(new GraphQLNonNull(PostType))),
-      async resolve(parent: PrismaUser, _, context: { prisma: PrismaClient }) {
-        return context.prisma.post.findMany({
+      resolve: async (parent: PrismaUser, _, context: { prisma: PrismaClient }) =>
+        context.prisma.post.findMany({
           where: { authorId: parent.id },
-        });
-      },
+        }),
     },
 
     userSubscribedTo: {
       type: new GraphQLNonNull(new GraphQLList(new GraphQLNonNull(UserType))),
-      async resolve(parent: PrismaUser, _, context: { prisma: PrismaClient }) {
-        return context.prisma.user.findMany({
+      resolve: async (parent: PrismaUser, _, context: { prisma: PrismaClient }) =>
+        context.prisma.user.findMany({
           where: {
             subscribedToUser: {
               some: {
@@ -97,14 +95,13 @@ const UserType = new GraphQLObjectType({
           include: {
             subscribedToUser: true,
           },
-        });
-      },
+        }),
     },
 
     subscribedToUser: {
       type: new GraphQLNonNull(new GraphQLList(new GraphQLNonNull(UserType))),
-      async resolve(parent: PrismaUser, _, context: { prisma: PrismaClient }) {
-        return context.prisma.user.findMany({
+      resolve: async (parent: PrismaUser, _, context: { prisma: PrismaClient }) =>
+        context.prisma.user.findMany({
           where: {
             userSubscribedTo: {
               some: {
@@ -115,8 +112,7 @@ const UserType = new GraphQLObjectType({
           include: {
             userSubscribedTo: true,
           },
-        });
-      },
+        }),
     },
   }),
 });
